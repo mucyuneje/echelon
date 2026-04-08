@@ -1,0 +1,1 @@
+Mitari static files we will be working on
