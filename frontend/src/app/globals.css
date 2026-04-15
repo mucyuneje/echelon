@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'DM Serif Display';
+  --font-body: 'DM Sans';
+  --font-mono: 'DM Mono';
+}
+
+* { 
+  box-sizing: border-box; 
+}
+
+body {
+  font-family: var(--font-body), sans-serif;
+  background: #080C14;
+  color: #E8EAF0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { 
+  width: 6px; 
+}
+::-webkit-scrollbar-track { 
+  background: #111827; 
+}
+::-webkit-scrollbar-thumb { 
+  background: #2D3748; 
+  border-radius: 3px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: #4A5568; 
+}
+
+/* --- Animations & Effects --- */
+.score-ring { 
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #1A1F2E 25%, #232836 50%, #1A1F2E 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.glass {
+  background: rgba(26, 31, 46, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #00C896, #00A077);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* --- Rank Badge Glows --- */
+.rank-1 { box-shadow: 0 0 20px rgba(245, 166, 35, 0.3); }
+.rank-2 { box-shadow: 0 0 16px rgba(160, 174, 192, 0.2); }
+.rank-3 { box-shadow: 0 0 16px rgba(205, 127, 50, 0.2); }
+
+/* --- Components Layer --- */
+@layer components {
+  .btn-primary {
+    @apply bg-jade hover:bg-jade-dark text-ink font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium px-5 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm;
+  }
+
+  .card {
+    @apply glass rounded-xl p-5;
+  }
+
+  .input {
+    /* FIXED: focus:bg-white/[0.08] allows for the custom 8% opacity */
+    @apply w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-jade/60 focus:bg-white/[0.08] transition-all;
+  }
+
+  .label {
+    @apply text-xs font-medium text-white/50 uppercase tracking-wider mb-1.5 block;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+}
