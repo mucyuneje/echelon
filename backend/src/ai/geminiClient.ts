@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 
-
 let _model: GenerativeModel | null = null;
 
 export function getGeminiModel(): GenerativeModel {
@@ -10,9 +9,9 @@ export function getGeminiModel(): GenerativeModel {
     }
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     _model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash", // faster & cheaper than pro, still excellent
+      model: "gemini-3-flash-preview",   // ✅ stable GA model — 1.5-flash is deprecated
       generationConfig: {
-        temperature: 0.2,       // low temp = consistent, structured output
+        temperature: 0.2,           // low temp = consistent, structured output
         topP: 0.8,
         maxOutputTokens: 8192,
       },
@@ -21,12 +20,16 @@ export function getGeminiModel(): GenerativeModel {
   return _model;
 }
 
+// Reset the singleton — called when a non-retryable API error occurs so that
+// a bad initialisation state doesn't lock the process across requests.
+export function resetGeminiModel(): void {
+  _model = null;
+}
+
 // Safe JSON extractor - strips markdown fences if Gemini wraps in ```json
 export function extractJSON(text: string): string {
-  // Remove ```json ... ``` fences
   const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) return fenceMatch[1].trim();
-  // Try to find first { or [ and last } or ]
   const start = text.search(/[\[{]/);
   const endBrace = text.lastIndexOf("}");
   const endBracket = text.lastIndexOf("]");
@@ -35,21 +38,48 @@ export function extractJSON(text: string): string {
   return text.trim();
 }
 
-// Retry wrapper for Gemini calls (handles rate limits)
+// HTTP status codes / messages that are worth retrying
+function isRetryable(error: any): boolean {
+  const msg: string = error?.message ?? "";
+  return (
+    msg.includes("503") ||
+    msg.includes("429") ||
+    msg.includes("500") ||
+    msg.toLowerCase().includes("rate limit") ||
+    msg.toLowerCase().includes("high demand") ||
+    msg.toLowerCase().includes("temporarily")
+  );
+}
+
+// Retry wrapper with true exponential backoff + jitter
 export async function callGeminiWithRetry(
   prompt: string,
   maxRetries = 3
 ): Promise<string> {
-  const model = getGeminiModel();
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      const model = getGeminiModel();
       const result = await model.generateContent(prompt);
       return result.response.text();
     } catch (error: any) {
+      const retryable = isRetryable(error);
+
+      // Non-retryable (e.g. 404 wrong model): reset singleton so next request
+      // can re-initialise, then surface the error immediately.
+      if (!retryable) {
+        resetGeminiModel();
+        throw error;
+      }
+
       if (attempt === maxRetries) throw error;
-      // Exponential backoff
-      const wait = attempt * 1500;
-      console.warn(`Gemini attempt ${attempt} failed, retrying in ${wait}ms...`);
+
+      // Exponential backoff: 2s → 4s → 8s, with ±20% jitter
+      const baseWait = Math.pow(2, attempt) * 1000;
+      const jitter = baseWait * 0.2 * (Math.random() * 2 - 1);
+      const wait = Math.round(baseWait + jitter);
+      console.warn(
+        `Gemini attempt ${attempt} failed, retrying in ${wait}ms… (${error.message})`
+      );
       await new Promise((r) => setTimeout(r, wait));
     }
   }

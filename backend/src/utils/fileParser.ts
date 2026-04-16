@@ -3,22 +3,50 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { TalentProfile } from "../types";
 
+// ─── PDF Validation ───────────────────────────────────────────────────────────
+// Checks the PDF header magic bytes before handing the buffer to pdf-parse.
+// pdf-parse will throw an opaque "bad XRef entry" error on corrupted files;
+// this guard converts that into a clean 400-level AppError message.
+
+function assertValidPdfBytes(buffer: Buffer): void {
+  // Every valid PDF starts with "%PDF-"
+  const header = buffer.slice(0, 5).toString("ascii");
+  if (header !== "%PDF-") {
+    throw new Error(
+      "The uploaded file does not appear to be a valid PDF. " +
+        "Please check the file and try again."
+    );
+  }
+}
+
 // ─── PDF Parsing ──────────────────────────────────────────────────────────────
 
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  // Validate before parsing — converts corrupted-file crashes into clear errors
+  assertValidPdfBytes(buffer);
+
   try {
     const data = await pdfParse(buffer);
     if (!data.text || data.text.trim().length < 20) {
-      throw new Error("PDF appears to be empty or image-based (no text extracted)");
+      throw new Error(
+        "PDF appears to be empty or image-based (no extractable text). " +
+          "Please upload a text-based PDF."
+      );
     }
     return data.text;
   } catch (error: any) {
+    // Re-wrap pdf-parse errors (e.g. "bad XRef entry") with a user-friendly message
+    if (error.message?.includes("XRef") || error.message?.includes("xref")) {
+      throw new Error(
+        "The PDF file is corrupted or uses an unsupported format. " +
+          "Please try re-saving the PDF and uploading again."
+      );
+    }
     throw new Error(`PDF parsing failed: ${error.message}`);
   }
 }
 
 // ─── CSV/Excel to TalentProfile Array ─────────────────────────────────────────
-// Maps flexible CSV column names to the Umurava Talent Profile Schema
 
 const COLUMN_ALIASES: Record<string, string[]> = {
   firstName: ["first name", "firstname", "first_name", "given name", "name"],
@@ -50,9 +78,7 @@ function findColumn(row: Record<string, string>, fieldKey: string): string | und
 function csvRowToTalentProfile(row: Record<string, string>): TalentProfile {
   const firstName = findColumn(row, "firstName") || "Unknown";
   const lastName = findColumn(row, "lastName") || "";
-  const fullNameFallback = findColumn(row, "firstName") || "";
 
-  // Handle "Full Name" columns
   let parsedFirst = firstName;
   let parsedLast = lastName;
   if (!lastName && firstName.includes(" ")) {
@@ -61,7 +87,6 @@ function csvRowToTalentProfile(row: Record<string, string>): TalentProfile {
     parsedLast = parts.slice(1).join(" ");
   }
 
-  // Parse skills from comma/pipe separated string
   const rawSkills = findColumn(row, "skills") || "";
   const skillNames = rawSkills
     .split(/[,|;]/)
@@ -74,11 +99,9 @@ function csvRowToTalentProfile(row: Record<string, string>): TalentProfile {
     yearsOfExperience: 0,
   }));
 
-  // Parse years of experience
   const yearsExpStr = findColumn(row, "yearsExperience") || "0";
   const yearsExp = parseFloat(yearsExpStr.replace(/[^0-9.]/g, "")) || 0;
 
-  // Build minimal experience entry if years provided
   const experience =
     yearsExp > 0
       ? [
@@ -94,7 +117,6 @@ function csvRowToTalentProfile(row: Record<string, string>): TalentProfile {
         ]
       : [];
 
-  // Parse education
   const rawEdu = findColumn(row, "education") || "";
   const education = rawEdu
     ? [
@@ -111,7 +133,9 @@ function csvRowToTalentProfile(row: Record<string, string>): TalentProfile {
   return {
     firstName: parsedFirst,
     lastName: parsedLast,
-    email: findColumn(row, "email") || `${parsedFirst.toLowerCase()}.${parsedLast.toLowerCase()}@unknown.com`,
+    email:
+      findColumn(row, "email") ||
+      `${parsedFirst.toLowerCase()}.${parsedLast.toLowerCase()}@unknown.com`,
     headline: findColumn(row, "headline") || "Professional",
     bio: findColumn(row, "bio"),
     location: findColumn(row, "location") || "Not specified",

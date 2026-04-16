@@ -7,7 +7,6 @@ import { AppError } from "../middleware/error.middleware";
 import { TalentProfile } from "../types";
 
 // ─── POST /api/candidates/upload-cv ──────────────────────────────────────────
-// Upload a single PDF resume — AI parses it into Talent Profile format
 
 export const uploadCV = async (req: Request, res: Response): Promise<void> => {
   if (!req.file) throw new AppError("No file uploaded. Send a PDF file.", 400);
@@ -17,13 +16,18 @@ export const uploadCV = async (req: Request, res: Response): Promise<void> => {
 
   const jobId = req.body.jobId || undefined;
 
-  // Extract text from PDF
-  const text = await extractTextFromPDF(req.file.buffer);
+  // extractTextFromPDF now validates the PDF header first, so corrupted files
+  // throw a descriptive Error that we surface as a 400 below.
+  let text: string;
+  try {
+    text = await extractTextFromPDF(req.file.buffer);
+  } catch (err: any) {
+    // PDF validation / parse failures → 400, not 500
+    throw new AppError(err.message ?? "Failed to read the uploaded PDF.", 400);
+  }
 
-  // Parse with AI
+  // Parse with AI — network / quota errors bubble up as 500 (correct)
   const profile = await parseResumeWithAI(text);
-
-  // Extract features for scoring
   const features = extractCandidateFeatures(profile);
 
   const candidate = await Candidate.create({
@@ -43,7 +47,6 @@ export const uploadCV = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ─── POST /api/candidates/upload-spreadsheet ─────────────────────────────────
-// Upload CSV or Excel file with multiple candidates
 
 export const uploadSpreadsheet = async (req: Request, res: Response): Promise<void> => {
   if (!req.file) throw new AppError("No file uploaded", 400);
@@ -78,7 +81,6 @@ export const uploadSpreadsheet = async (req: Request, res: Response): Promise<vo
     throw new AppError("No candidates found in the uploaded file", 400);
   }
 
-  // Batch insert all candidates
   const candidateDocs = profiles.map((profile, idx) => ({
     source: "external_csv" as const,
     rawCsvRow: rawRows[idx],
@@ -101,7 +103,6 @@ export const uploadSpreadsheet = async (req: Request, res: Response): Promise<vo
 };
 
 // ─── POST /api/candidates/umurava-profile ────────────────────────────────────
-// Ingest a Umurava Talent Profile (JSON body — matches official schema exactly)
 
 export const ingestUmuravaProfile = async (req: Request, res: Response): Promise<void> => {
   const profile = req.body as TalentProfile;
@@ -129,7 +130,6 @@ export const ingestUmuravaProfile = async (req: Request, res: Response): Promise
 };
 
 // ─── POST /api/candidates/umurava-bulk ───────────────────────────────────────
-// Bulk ingest array of Umurava Talent Profiles
 
 export const bulkIngestUmuravaProfiles = async (req: Request, res: Response): Promise<void> => {
   const profiles = req.body as TalentProfile[];
@@ -157,6 +157,7 @@ export const bulkIngestUmuravaProfiles = async (req: Request, res: Response): Pr
 };
 
 // ─── GET /api/candidates ─────────────────────────────────────────────────────
+
 export const getCandidates = async (req: Request, res: Response): Promise<void> => {
   const { jobId, source, page = "1", limit = "20" } = req.query;
 
@@ -182,6 +183,7 @@ export const getCandidates = async (req: Request, res: Response): Promise<void> 
 };
 
 // ─── GET /api/candidates/:id ─────────────────────────────────────────────────
+
 export const getCandidate = async (req: Request, res: Response): Promise<void> => {
   const candidate = await Candidate.findById(req.params.id);
   if (!candidate) throw new AppError("Candidate not found", 404);
@@ -189,7 +191,8 @@ export const getCandidate = async (req: Request, res: Response): Promise<void> =
   res.json({ success: true, data: candidate });
 };
 
-// ─── DELETE /api/candidates/:id ───────────────────────────────────────────────
+// ─── DELETE /api/candidates/:id ──────────────────────────────────────────────
+
 export const deleteCandidate = async (req: Request, res: Response): Promise<void> => {
   const candidate = await Candidate.findByIdAndDelete(req.params.id);
   if (!candidate) throw new AppError("Candidate not found", 404);
