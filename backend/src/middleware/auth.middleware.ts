@@ -4,6 +4,12 @@ import { User } from "../models/user.model";
 
 export interface AuthRequest extends Request {
   user?: any;
+  body: any;
+  params: any;
+  query: any;
+  file?: any;
+  files?: any;
+  headers: any;
 }
 
 export const protect = async (
