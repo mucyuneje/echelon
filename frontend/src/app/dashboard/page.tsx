@@ -10,7 +10,18 @@ import { useTheme } from '@/components/ThemeProvider'
 interface Job { _id: string; title: string; company: string; location: string; structuredRequirements?: any; createdAt?: string }
 
 const container = { hidden:{opacity:0}, visible:{opacity:1,transition:{staggerChildren:0.07,delayChildren:0.05}} }
-const item      = { hidden:{opacity:0,y:16}, visible:{opacity:1,y:0,transition:{type:'spring',stiffness:300,damping:26}} }
+const item: any = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 20
+    }
+  }
+};
 
 function AnimatedNumber({ value }: { value: number }) {
   const [d, setD] = useState(0)

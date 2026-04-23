@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { candidatesAPI, jobsAPI } from '@/lib/api'
 import { Candidate, Job } from '@/types'
 import toast from 'react-hot-toast'
@@ -22,7 +22,8 @@ const SOURCE_DOT: Record<string, string> = {
   umurava_profile:'bg-green', external_cv:'bg-blue-400', external_csv:'bg-amber', external_docx:'bg-purple-400',
 }
 
-export default function CandidatesPage() {
+// ─── Inner component that uses useSearchParams ────────────────────────────────
+function CandidatesContent() {
   const searchParams = useSearchParams()
   const initJobId = searchParams.get('jobId') || ''
 
@@ -79,7 +80,7 @@ export default function CandidatesPage() {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
 
-      {/* Header — FIX: use text-body-primary instead of text-white */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-body-primary">Candidates</h1>
@@ -97,7 +98,7 @@ export default function CandidatesPage() {
         </button>
       </div>
 
-      {/* Filter bar — FIX: glass adapts to theme, selects use CSS var */}
+      {/* Filter bar */}
       <div className="glass rounded-2xl p-3 mb-5 flex flex-wrap gap-2 items-center">
         {/* Search */}
         <div className="relative flex-1 min-w-40">
@@ -113,7 +114,6 @@ export default function CandidatesPage() {
           />
         </div>
 
-        {/* FIX: all selects use .input class — no hardcoded background */}
         <select value={filterJob} onChange={e => setFilterJob(e.target.value)}
           className="input py-2 text-xs max-w-[180px]">
           <option value="">All jobs</option>
@@ -210,7 +210,7 @@ export default function CandidatesPage() {
                   style={{ background:'rgba(37,99,235,0.1)', color:'var(--umu-blue)', border:'1px solid rgba(37,99,235,0.15)' }}>
                   {c.profile.firstName[0]}{c.profile.lastName[0]}
                 </div>
-                {/* Name + headline — FIX: use CSS vars */}
+                {/* Name + headline */}
                 <div className="flex-1 min-w-0">
                   <p className="text-body-primary text-sm font-medium truncate">
                     {c.profile.firstName} {c.profile.lastName}
@@ -293,5 +293,20 @@ export default function CandidatesPage() {
 
       {showUpload && <UploadModal onClose={() => { setShowUpload(false); load() }} />}
     </div>
+  )
+}
+
+// ─── Page export — wraps content in Suspense to satisfy Next.js static gen ───
+export default function CandidatesPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-2">
+        {Array(6).fill(0).map((_, i) => (
+          <Skeleton key={i} className="h-16 rounded-xl" />
+        ))}
+      </div>
+    }>
+      <CandidatesContent />
+    </Suspense>
   )
 }
