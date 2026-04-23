@@ -9,7 +9,7 @@ export function getGeminiModel(): GenerativeModel {
     }
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     _model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",   // ✅ stable GA model — 1.5-flash is deprecated
+      model: "gemini-3-flash-preview",
       generationConfig: {
         temperature: 0.2,           // low temp = consistent, structured output
         topP: 0.8,

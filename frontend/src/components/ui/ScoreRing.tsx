@@ -1,25 +1,46 @@
+'use client'
 
-interface ScoreRingProps { score: number; size?: number; strokeWidth?: number; label?: string }
+interface ScoreRingProps {
+  score: number
+  size?: number
+  strokeWidth?: number
+}
 
-export default function ScoreRing({ score, size = 80, strokeWidth = 6, label }: ScoreRingProps) {
-  const r = (size - strokeWidth * 2) / 2
-  const circ = 2 * Math.PI * r
-  const offset = circ - (score / 100) * circ
-  const color = score >= 75 ? '#00C896' : score >= 50 ? '#F5A623' : '#E53E3E'
+export default function ScoreRing({ score, size = 42, strokeWidth = 3 }: ScoreRingProps) {
+  const radius = (size - strokeWidth * 2) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (score / 100) * circumference
+  const center = size / 2
+
+  const color =
+    score >= 70 ? '#00C896' :
+    score >= 50 ? '#2563EB' :
+    score >= 30 ? '#F59E0B' : '#EF4444'
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth}
-          strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)' }} />
-        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle"
-          style={{ transform: 'rotate(90deg)', transformOrigin: '50% 50%', fill: 'white', fontSize: size * 0.22, fontWeight: 600, fontFamily: 'DM Sans' }}>
-          {score}
-        </text>
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+        fill="none" style={{ transform: 'rotate(-90deg)' }}>
+        {/* Track */}
+        <circle cx={center} cy={center} r={radius}
+          stroke="var(--border)" strokeWidth={strokeWidth} fill="none" />
+        {/* Progress */}
+        <circle cx={center} cy={center} r={radius}
+          stroke={color} strokeWidth={strokeWidth} fill="none"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="score-ring" />
       </svg>
-      {label && <span className="text-white/40 text-xs">{label}</span>}
+      {/* Score number — div overlay, never invisible in dark mode */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size * 0.26, fontWeight: 700,
+        fontFamily: 'monospace', color: color,
+      }}>
+        {score}
+      </div>
     </div>
   )
 }

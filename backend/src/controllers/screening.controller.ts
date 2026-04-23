@@ -7,20 +7,26 @@ import { calculateHybridScore } from "../services/scoring.service";
 import { generateAIInsights, generateDeepCandidateAnalysis } from "../ai/rankingEngine";
 import { analyzeJobWithAI } from "../ai/jobAnalyzer";
 import { AppError } from "../middleware/error.middleware";
+import { AuthRequest } from "../middleware/auth.middleware";
+
+// Helper: build filter scoped to user (recruiters see only their own, admin sees all)
+function buildOwnerFilter(req: AuthRequest) {
+  if (req.user.role === "admin") return {};
+  return { createdBy: req.user._id };
+}
 
 // ─── POST /api/screen/run/:jobId ─────────────────────────────────────────────
-// Main screening engine: score all candidates for a job, rank, explain
-
-export const runScreening = async (req: Request, res: Response): Promise<void> => {
+export const runScreening = async (req: AuthRequest, res: Response): Promise<void> => {
   const startTime = Date.now();
   const { jobId } = req.params;
   const { topN = 20, candidateIds } = req.body;
 
-  // 1. Get job
-  const job = await Job.findById(jobId);
+  // 1. Get job — scoped by owner
+  const jobFilter: any = { _id: jobId, ...buildOwnerFilter(req) };
+  const job = await Job.findOne(jobFilter);
   if (!job) throw new AppError("Job not found", 404);
 
-  // 2. Ensure job has structured requirements (AI-analyzed)
+  // 2. Ensure structured requirements exist
   if (!job.structuredRequirements) {
     console.log("⚙️  Running job analysis first...");
     const structured = await analyzeJobWithAI(job.title, job.description);
@@ -28,13 +34,11 @@ export const runScreening = async (req: Request, res: Response): Promise<void> =
     await job.save();
   }
 
-  // 3. Fetch candidates (all for this job, or specific IDs)
-  const candidateFilter: any = {};
+  // 3. Fetch candidates scoped to this recruiter + this job
+  // Only screen candidates explicitly assigned to this job
+  const candidateFilter: any = { ...buildOwnerFilter(req), jobId };
   if (candidateIds && Array.isArray(candidateIds)) {
     candidateFilter._id = { $in: candidateIds };
-  } else {
-    // Get candidates associated with this job OR all candidates (flexible)
-    candidateFilter.$or = [{ jobId }, { jobId: { $exists: false } }];
   }
 
   const candidates = await Candidate.find(candidateFilter);
@@ -46,19 +50,17 @@ export const runScreening = async (req: Request, res: Response): Promise<void> =
     );
   }
 
-  // 4. Compute algorithmic scores for all candidates
+  // 4. Score all candidates
   const scored = candidates.map((candidate) => {
     const scoreBreakdown = calculateHybridScore(candidate, job);
     return { candidate, scoreBreakdown };
   });
 
-  // 5. Sort by total score descending
+  // 5. Sort & take top N
   scored.sort((a, b) => b.scoreBreakdown.totalScore - a.scoreBreakdown.totalScore);
-
-  // 6. Take top N
   const topCandidates = scored.slice(0, topN);
 
-  // 7. Generate AI insights for top candidates (the "why" explanations)
+  // 6. Generate AI insights
   console.log(`🤖 Generating AI insights for top ${topCandidates.length} candidates...`);
 
   const aiInputs = topCandidates.map(({ candidate, scoreBreakdown }) => ({
@@ -83,45 +85,57 @@ export const runScreening = async (req: Request, res: Response): Promise<void> =
     aiInputs
   );
 
-  // 8. Build final results & assign ranks
-  const screeningRunId = uuidv4();
-  const finalResults = [];
+  // 7. Build pre-results with AI insights attached, then re-sort by AI-adjusted score
+  const FIT_PRIORITY: Record<string, number> = {
+    "Strong Fit": 4,
+    "Good Fit": 3,
+    "Partial Fit": 2,
+    "Poor Fit": 1,
+  };
 
-  for (let rank = 0; rank < topCandidates.length; rank++) {
-    const { candidate, scoreBreakdown } = topCandidates[rank];
-    const insight = insightMap.get(candidate._id.toString()) || {
-      strengths: ["Profile reviewed"],
-      gaps: [],
-      recommendation: "Review candidate manually",
-      confidence: 0.5,
-      fitForRole: "Partial Fit" as const,
-    };
-
-    // Blend: 70% algorithmic score + 30% AI-adjusted score
-    const aiAdjustedScore = insightMap.get(candidate._id.toString())
-      ? undefined
-      : scoreBreakdown.totalScore;
-
-    const processingTime = Date.now() - startTime;
-
-    finalResults.push({
-      jobId,
-      candidateId: candidate._id,
-      rank: rank + 1,
-      score: scoreBreakdown,
-      insight,
-      processingTimeMs: processingTime,
-      screeningRunId,
+  const rankedCandidates = topCandidates
+    .map(({ candidate, scoreBreakdown }) => {
+      const insight = insightMap.get(candidate._id.toString()) || {
+        strengths: ["Profile reviewed"],
+        gaps: [],
+        recommendation: "Review candidate manually",
+        confidence: 0.5,
+        fitForRole: "Partial Fit" as const,
+        adjustedScore: scoreBreakdown.totalScore,
+      };
+      // Blend: 60% AI-adjusted score + 40% algorithmic score for final ordering
+      const aiScore = (insight as any).adjustedScore ?? scoreBreakdown.totalScore;
+      const blendedScore = Math.round(aiScore * 0.6 + scoreBreakdown.totalScore * 0.4);
+      return { candidate, scoreBreakdown, insight, blendedScore };
+    })
+    .sort((a, b) => {
+      // Primary: fit tier (Strong > Good > Partial > Poor)
+      const fitDiff =
+        (FIT_PRIORITY[b.insight.fitForRole] ?? 0) -
+        (FIT_PRIORITY[a.insight.fitForRole] ?? 0);
+      if (fitDiff !== 0) return fitDiff;
+      // Secondary: blended score within same fit tier
+      return b.blendedScore - a.blendedScore;
     });
-  }
 
-  // 9. Save results to DB
+  const screeningRunId = uuidv4();
+  const finalResults = rankedCandidates.map(({ candidate, scoreBreakdown, insight }, idx) => ({
+    jobId,
+    candidateId: candidate._id,
+    rank: idx + 1,
+    score: scoreBreakdown,
+    insight,
+    processingTimeMs: Date.now() - startTime,
+    screeningRunId,
+  }));
+
+  // 8. Save results (replace previous run for this job)
   await ScreeningResult.deleteMany({ jobId, screeningRunId: { $ne: screeningRunId } });
   await ScreeningResult.insertMany(finalResults);
 
-  // 10. Build response with full candidate data
+  // 9. Build enriched response
   const enrichedResults = finalResults.map((result, idx) => {
-    const { candidate } = topCandidates[idx];
+    const { candidate } = rankedCandidates[idx];
     return {
       rank: result.rank,
       candidateId: candidate._id,
@@ -154,12 +168,17 @@ export const runScreening = async (req: Request, res: Response): Promise<void> =
 };
 
 // ─── GET /api/screen/results/:jobId ─────────────────────────────────────────
-// Get latest screening results for a job
-
-export const getScreeningResults = async (req: Request, res: Response): Promise<void> => {
+export const getScreeningResults = async (req: AuthRequest, res: Response): Promise<void> => {
   const { jobId } = req.params;
 
-  // Get most recent run
+  // Verify job ownership
+  const jobFilter: any = { _id: jobId, ...buildOwnerFilter(req) };
+  const job = await Job.findOne(jobFilter).select("title company");
+  if (!job) {
+    res.json({ success: true, message: "No screening results yet", data: [] });
+    return;
+  }
+
   const latestResult = await ScreeningResult.findOne({ jobId }).sort({ createdAt: -1 });
   if (!latestResult) {
     res.json({ success: true, message: "No screening results yet", data: [] });
@@ -173,55 +192,23 @@ export const getScreeningResults = async (req: Request, res: Response): Promise<
     .sort({ rank: 1 })
     .populate("candidateId");
 
-  const job = await Job.findById(jobId).select("title company");
-
   res.json({
     success: true,
-    data: {
-      job,
-      screeningRunId: latestResult.screeningRunId,
-      runDate: latestResult.createdAt,
-      results,
-    },
-  });
-};
-
-// ─── GET /api/screen/candidate/:resultId/deep-analysis ───────────────────────
-// Deep AI analysis for a specific candidate result
-
-export const getDeepAnalysis = async (req: Request, res: Response): Promise<void> => {
-  const result = await ScreeningResult.findById(req.params.resultId).populate("candidateId");
-  if (!result) throw new AppError("Screening result not found", 404);
-
-  const job = await Job.findById(result.jobId);
-  if (!job) throw new AppError("Job not found", 404);
-
-  const candidate = result.candidateId as any;
-
-  const deepAnalysis = await generateDeepCandidateAnalysis(
-    job.title,
-    job.structuredRequirements!,
-    candidate.profile,
-    result.rank,
-    result.score.totalScore
-  );
-
-  res.json({
-    success: true,
-    data: {
-      candidateName: `${candidate.profile.firstName} ${candidate.profile.lastName}`,
-      rank: result.rank,
-      score: result.score,
-      deepAnalysis,
-    },
+    data: { job, screeningRunId: latestResult.screeningRunId, runDate: latestResult.createdAt, results },
   });
 };
 
 // ─── GET /api/screen/stats/:jobId ───────────────────────────────────────────
-// Analytics: score distribution, skill gaps across all candidates
-
-export const getScreeningStats = async (req: Request, res: Response): Promise<void> => {
+export const getScreeningStats = async (req: AuthRequest, res: Response): Promise<void> => {
   const { jobId } = req.params;
+
+  // Verify job ownership
+  const jobFilter: any = { _id: jobId, ...buildOwnerFilter(req) };
+  const job = await Job.findOne(jobFilter);
+  if (!job) {
+    res.json({ success: true, data: null });
+    return;
+  }
 
   const latestResult = await ScreeningResult.findOne({ jobId }).sort({ createdAt: -1 });
   if (!latestResult) {
@@ -245,7 +232,6 @@ export const getScreeningStats = async (req: Request, res: Response): Promise<vo
     return acc;
   }, {});
 
-  // Score buckets
   const buckets = { "80-100": 0, "60-79": 0, "40-59": 0, "0-39": 0 };
   for (const score of scores) {
     if (score >= 80) buckets["80-100"]++;
@@ -262,9 +248,38 @@ export const getScreeningStats = async (req: Request, res: Response): Promise<vo
       scoreBuckets: buckets,
       fitDistribution,
       avgConfidence:
-        Math.round(
-          (results.reduce((a, r) => a + r.insight.confidence, 0) / results.length) * 100
-        ) / 100,
+        Math.round((results.reduce((a, r) => a + r.insight.confidence, 0) / results.length) * 100) / 100,
+    },
+  });
+};
+
+// ─── GET /api/screen/candidate/:resultId/deep-analysis ───────────────────────
+export const getDeepAnalysis = async (req: AuthRequest, res: Response): Promise<void> => {
+  const result = await ScreeningResult.findById(req.params.resultId).populate("candidateId");
+  if (!result) throw new AppError("Screening result not found", 404);
+
+  // Verify job ownership
+  const jobFilter: any = { _id: result.jobId, ...buildOwnerFilter(req) };
+  const job = await Job.findOne(jobFilter);
+  if (!job) throw new AppError("Job not found", 404);
+
+  const candidate = result.candidateId as any;
+
+  const deepAnalysis = await generateDeepCandidateAnalysis(
+    job.title,
+    job.structuredRequirements!,
+    candidate.profile,
+    result.rank,
+    result.score.totalScore
+  );
+
+  res.json({
+    success: true,
+    data: {
+      candidateName: `${candidate.profile.firstName} ${candidate.profile.lastName}`,
+      rank: result.rank,
+      score: result.score,
+      deepAnalysis,
     },
   });
 };

@@ -13,12 +13,16 @@ export interface StructuredRequirements {
   weights: { skills: number; experience: number; projects: number; education: number; certifications: number }
 }
 
-export interface Skill { name: string; level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert'; yearsOfExperience: number }
+export interface Skill { name: string; level: 'Beginner'|'Intermediate'|'Advanced'|'Expert'; yearsOfExperience: number }
+export interface Language { name: string; proficiency: 'Basic'|'Conversational'|'Fluent'|'Native' }
+
 export interface CandidateProfile {
   firstName: string; lastName: string; email: string; headline: string
   bio?: string; location: string; skills: Skill[]
+  languages?: Language[]
   experience: any[]; education: any[]; certifications: any[]; projects: any[]
-  availability: { status: string; type: string }; socialLinks?: any
+  availability: { status: string; type: string; startDate?: string }
+  socialLinks?: Record<string, string>
 }
 export interface CandidateFeatures {
   totalYearsExperience: number; uniqueSkills: string[]
@@ -27,7 +31,9 @@ export interface CandidateFeatures {
 }
 export interface Candidate {
   _id: string; source: string; profile: CandidateProfile
-  features: CandidateFeatures; originalFileName?: string; createdAt: string
+  features: CandidateFeatures; originalFileName?: string
+  jobId?: string | { _id: string; title: string; company: string }
+  createdAt: string
 }
 
 export interface ScoreBreakdown {
@@ -37,12 +43,13 @@ export interface ScoreBreakdown {
 export interface CandidateInsight {
   strengths: string[]; gaps: string[]; recommendation: string
   confidence: number; biasNote?: string
-  fitForRole: 'Strong Fit' | 'Good Fit' | 'Partial Fit' | 'Poor Fit'
+  fitForRole: 'Strong Fit'|'Good Fit'|'Partial Fit'|'Poor Fit'
   alternativeRoleSuggestion?: string
 }
 export interface ScreeningResultItem {
-  rank: number; candidateId: string; candidateName: string
-  candidateEmail: string; candidateHeadline: string; candidateLocation: string
+  rank: number; candidateId: string; resultId?: string
+  candidateName: string; candidateEmail: string
+  candidateHeadline: string; candidateLocation: string
   score: ScoreBreakdown; insight: CandidateInsight
   features: CandidateFeatures; source: string
 }

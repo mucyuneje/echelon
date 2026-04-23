@@ -22,10 +22,22 @@ export const registerThunk = createAsyncThunk('auth/register', async ({ name, em
   }
 })
 
+export const loadMeThunk = createAsyncThunk('auth/me', async (_, { rejectWithValue }) => {
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    if (!token) return rejectWithValue('No token')
+    const res = await authAPI.me()
+    return { user: res.data.data, token }
+  } catch (err: any) {
+    return rejectWithValue('Session expired')
+  }
+})
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    setUser: (state, action) => { state.user = action.payload },
     setCredentials: (state, action: PayloadAction<{ user: any; token: string }>) => {
       state.user = action.payload.user
       state.token = action.payload.token
@@ -40,13 +52,27 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loginThunk.pending, (s) => { s.loading = true; s.error = null })
-      .addCase(loginThunk.fulfilled, (s, a) => { s.loading = false; s.user = a.payload.user; s.token = a.payload.token; if (typeof window !== 'undefined') localStorage.setItem('token', a.payload.token) })
+      .addCase(loginThunk.fulfilled, (s, a) => {
+        s.loading = false; s.user = a.payload.user; s.token = a.payload.token
+        if (typeof window !== 'undefined') localStorage.setItem('token', a.payload.token)
+      })
       .addCase(loginThunk.rejected, (s, a) => { s.loading = false; s.error = a.payload as string })
       .addCase(registerThunk.pending, (s) => { s.loading = true; s.error = null })
-      .addCase(registerThunk.fulfilled, (s, a) => { s.loading = false; s.user = a.payload.user; s.token = a.payload.token; if (typeof window !== 'undefined') localStorage.setItem('token', a.payload.token) })
+      .addCase(registerThunk.fulfilled, (s, a) => {
+        s.loading = false; s.user = a.payload.user; s.token = a.payload.token
+        if (typeof window !== 'undefined') localStorage.setItem('token', a.payload.token)
+      })
       .addCase(registerThunk.rejected, (s, a) => { s.loading = false; s.error = a.payload as string })
+      .addCase(loadMeThunk.pending, (s) => { s.loading = true })
+      .addCase(loadMeThunk.fulfilled, (s, a) => {
+        s.loading = false; s.user = a.payload.user; s.token = a.payload.token
+      })
+      .addCase(loadMeThunk.rejected, (s) => {
+        s.loading = false; s.user = null; s.token = null
+        if (typeof window !== 'undefined') localStorage.removeItem('token')
+      })
   },
 })
 
-export const { setCredentials, logout, clearError } = authSlice.actions
+export const { setCredentials, logout, clearError,setUser } = authSlice.actions
 export default authSlice.reducer

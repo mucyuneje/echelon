@@ -2,20 +2,20 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  timeout: 60000,
+  timeout: 90000,
 })
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(cfg => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token')
-    if (token) config.headers.Authorization = `Bearer ${token}`
+    const t = localStorage.getItem('token')
+    if (t) cfg.headers.Authorization = `Bearer ${t}`
   }
-  return config
+  return cfg
 })
 
 api.interceptors.response.use(
-  (res) => res,
-  (err) => {
+  r => r,
+  err => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('token')
       window.location.href = '/auth'
@@ -27,42 +27,52 @@ api.interceptors.response.use(
 export default api
 
 export const authAPI = {
-  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  login:    (email: string, password: string) => api.post('/auth/login', { email, password }),
   register: (name: string, email: string, password: string) => api.post('/auth/register', { name, email, password }),
-  me: () => api.get('/auth/me'),
+  me:       () => api.get('/auth/me'),
+   // ↓ Add these two — they need backend routes to be added too
+  updateProfile:  (data: { name: string }) => api.put('/auth/me', data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) => api.put('/auth/password', data),
 }
 
 export const jobsAPI = {
-  list: () => api.get('/jobs'),
-  get: (id: string) => api.get(`/jobs/${id}`),
-  create: (data: any) => api.post('/jobs', data),
-  update: (id: string, data: any) => api.put(`/jobs/${id}`, data),
-  delete: (id: string) => api.delete(`/jobs/${id}`),
-  analyze: (id: string) => api.post(`/jobs/${id}/analyze`),
+  list:    ()                      => api.get('/jobs'),
+  get:     (id: string)            => api.get(`/jobs/${id}`),
+  create:  (data: any)             => api.post('/jobs', data),
+  update:  (id: string, d: any)    => api.put(`/jobs/${id}`, d),
+  delete:  (id: string)            => api.delete(`/jobs/${id}`),
+  analyze: (id: string)            => api.post(`/jobs/${id}/analyze`),
 }
 
 export const candidatesAPI = {
-  list: (params?: any) => api.get('/candidates', { params }),
-  get: (id: string) => api.get(`/candidates/${id}`),
-  uploadCV: (file: File, jobId?: string) => {
+  list:       (params?: any) => api.get('/candidates', { params }),
+  get:        (id: string)   => api.get(`/candidates/${id}`),
+  countByJob: ()             => api.get('/candidates/count-by-job'),
+  delete:     (id: string)   => api.delete(`/candidates/${id}`),
+
+  // Multi-file upload — sends all files in one request
+  uploadFiles: (files: File[], jobId?: string) => {
     const fd = new FormData()
-    fd.append('file', file)
+    files.forEach(f => fd.append('files', f))
     if (jobId) fd.append('jobId', jobId)
-    return api.post('/candidates/upload-cv', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return api.post('/candidates/upload-cv', fd)
   },
-  uploadSpreadsheet: (file: File, jobId?: string) => {
+
+  uploadSpreadsheet: (files: File[], jobId?: string) => {
     const fd = new FormData()
-    fd.append('file', file)
+    files.forEach(f => fd.append('files', f))
     if (jobId) fd.append('jobId', jobId)
-    return api.post('/candidates/upload-spreadsheet', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return api.post('/candidates/upload-spreadsheet', fd)
   },
-  bulkUmurava: (profiles: any[]) => api.post('/candidates/umurava-bulk', profiles),
-  delete: (id: string) => api.delete(`/candidates/${id}`),
+
+  bulkUmurava: (profiles: any[], jobId?: string) =>
+    api.post(`/candidates/umurava-bulk${jobId ? `?jobId=${jobId}` : ''}`, profiles),
 }
 
 export const screeningAPI = {
-  run: (jobId: string, topN = 20) => api.post(`/screen/run/${jobId}`, { topN }),
-  results: (jobId: string) => api.get(`/screen/results/${jobId}`),
-  stats: (jobId: string) => api.get(`/screen/stats/${jobId}`),
-  deepAnalysis: (resultId: string) => api.get(`/screen/candidate/${resultId}/deep-analysis`),
+  run:         (jobId: string, topN = 10) => api.post(`/screen/run/${jobId}`, { topN }),
+  results:     (jobId: string)            => api.get(`/screen/results/${jobId}`),
+  stats:       (jobId: string)            => api.get(`/screen/stats/${jobId}`),
+  deepAnalysis:(resultId: string)         => api.get(`/screen/candidate/${resultId}/deep-analysis`),
 }
+

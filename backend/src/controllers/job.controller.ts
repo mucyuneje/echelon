@@ -4,6 +4,12 @@ import { analyzeJobWithAI } from "../ai/jobAnalyzer";
 import { AppError } from "../middleware/error.middleware";
 import { AuthRequest } from "../middleware/auth.middleware";
 
+// Helper: recruiters only see their own jobs; admins see all
+function buildOwnerFilter(req: AuthRequest) {
+  if (req.user.role === "admin") return { isActive: true };
+  return { isActive: true, createdBy: req.user._id };
+}
+
 // POST /api/jobs
 export const createJob = async (req: AuthRequest, res: Response): Promise<void> => {
   const { title, company, description, location, jobType } = req.body;
@@ -12,17 +18,14 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
     throw new AppError("Title, company, and description are required", 400);
   }
 
-  // Create job first (fast)
   const job = await Job.create({
-    title,
-    company,
-    description,
+    title, company, description,
     location: location || "Remote",
     jobType: jobType || "Full-time",
     createdBy: req.user._id,
   });
 
-  // Async: analyze job with AI in background (don't block response)
+  // Async AI analysis — don't block response
   analyzeJobWithAI(title, description)
     .then(async (structured) => {
       await Job.findByIdAndUpdate(job._id, { structuredRequirements: structured });
@@ -41,7 +44,7 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
 
 // GET /api/jobs
 export const getJobs = async (req: AuthRequest, res: Response): Promise<void> => {
-  const jobs = await Job.find({ isActive: true })
+  const jobs = await Job.find(buildOwnerFilter(req))
     .sort({ createdAt: -1 })
     .populate("createdBy", "name email");
 
@@ -50,7 +53,8 @@ export const getJobs = async (req: AuthRequest, res: Response): Promise<void> =>
 
 // GET /api/jobs/:id
 export const getJob = async (req: AuthRequest, res: Response): Promise<void> => {
-  const job = await Job.findById(req.params.id).populate("createdBy", "name email");
+  const filter: any = { _id: req.params.id, ...buildOwnerFilter(req) };
+  const job = await Job.findOne(filter).populate("createdBy", "name email");
   if (!job) throw new AppError("Job not found", 404);
 
   res.json({ success: true, data: job });
@@ -58,12 +62,11 @@ export const getJob = async (req: AuthRequest, res: Response): Promise<void> => 
 
 // PUT /api/jobs/:id
 export const updateJob = async (req: AuthRequest, res: Response): Promise<void> => {
-  const job = await Job.findById(req.params.id);
+  const filter: any = { _id: req.params.id, ...buildOwnerFilter(req) };
+  const job = await Job.findOne(filter);
   if (!job) throw new AppError("Job not found", 404);
 
   const { title, company, description, location, jobType } = req.body;
-
-  // If description changed, re-analyze
   const descriptionChanged = description && description !== job.description;
 
   Object.assign(job, { title, company, description, location, jobType });
@@ -82,27 +85,21 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
 
 // DELETE /api/jobs/:id (soft delete)
 export const deleteJob = async (req: AuthRequest, res: Response): Promise<void> => {
-  const job = await Job.findByIdAndUpdate(
-    req.params.id,
-    { isActive: false },
-    { new: true }
-  );
+  const filter: any = { _id: req.params.id, ...buildOwnerFilter(req) };
+  const job = await Job.findOneAndUpdate(filter, { isActive: false }, { new: true });
   if (!job) throw new AppError("Job not found", 404);
 
   res.json({ success: true, message: "Job deleted" });
 };
 
-// POST /api/jobs/:id/analyze  (manually trigger AI analysis)
+// POST /api/jobs/:id/analyze
 export const analyzeJob = async (req: AuthRequest, res: Response): Promise<void> => {
-  const job = await Job.findById(req.params.id);
+  const filter: any = { _id: req.params.id, ...buildOwnerFilter(req) };
+  const job = await Job.findOne(filter);
   if (!job) throw new AppError("Job not found", 404);
 
   const structured = await analyzeJobWithAI(job.title, job.description);
   await Job.findByIdAndUpdate(job._id, { structuredRequirements: structured });
 
-  res.json({
-    success: true,
-    message: "Job analyzed by AI",
-    data: structured,
-  });
+  res.json({ success: true, message: "Job analyzed by AI", data: structured });
 };

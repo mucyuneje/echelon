@@ -11,7 +11,11 @@ import { ScoreBreakdown, StructuredJobRequirements } from "../types";
 // ─── Skill Matching ────────────────────────────────────────────────────────────
 
 function computeSkillScore(candidate: ICandidate, requirements: StructuredJobRequirements): number {
-  const candidateSkills = candidate.profile.skills.map((s) => s.name.toLowerCase());
+  // ✅ Fixed: filter out skills with undefined/null name before calling toLowerCase
+  const candidateSkills = candidate.profile.skills
+    .filter((s) => s?.name)
+    .map((s) => s.name.toLowerCase());
+
   const requiredSkills = requirements.requiredSkills.map((s) => s.toLowerCase());
   const optionalSkills = requirements.optionalSkills.map((s) => s.toLowerCase());
 
@@ -22,8 +26,9 @@ function computeSkillScore(candidate: ICandidate, requirements: StructuredJobReq
   let proficiencyBonus = 0;
 
   for (const required of requiredSkills) {
+    // ✅ Fixed: guard s.name before calling toLowerCase inside find
     const found = candidate.profile.skills.find(
-      (s) => s.name.toLowerCase().includes(required) || required.includes(s.name.toLowerCase())
+      (s) => s?.name && (s.name.toLowerCase().includes(required) || required.includes(s.name.toLowerCase()))
     );
     if (found) {
       requiredMatches++;
@@ -94,7 +99,11 @@ function computeProjectScore(candidate: ICandidate, requirements: StructuredJobR
     let projectScore = 20; // Base score for having a project
 
     // Tech relevance
-    const projectTech = project.technologies.map((t) => t.toLowerCase());
+    // ✅ Fixed: guard t before calling toLowerCase
+    const projectTech = (project.technologies || [])
+      .filter((t) => t)
+      .map((t) => t.toLowerCase());
+
     const techMatches = projectTech.filter((t) =>
       requiredTech.some((r) => r.includes(t) || t.includes(r))
     ).length;
@@ -139,6 +148,8 @@ function computeEducationScore(candidate: ICandidate, requirements: StructuredJo
 
   let maxScore = 30;
   for (const edu of education) {
+    // ✅ Fixed: guard edu.degree before calling toLowerCase
+    if (!edu?.degree) continue;
     const degreeLower = edu.degree.toLowerCase();
     for (const [key, score] of Object.entries(degreeLevel)) {
       if (degreeLower.includes(key)) {
@@ -151,7 +162,8 @@ function computeEducationScore(candidate: ICandidate, requirements: StructuredJo
   // Bonus: CS-related field of study
   const csFields = ["computer", "software", "information", "data", "engineering", "mathematics"];
   const hasCSField = education.some((e) =>
-    csFields.some((f) => e.fieldOfStudy.toLowerCase().includes(f))
+    // ✅ Fixed: guard e.fieldOfStudy before calling toLowerCase
+    e?.fieldOfStudy && csFields.some((f) => e.fieldOfStudy.toLowerCase().includes(f))
   );
   if (hasCSField) maxScore = Math.min(100, maxScore + 10);
 
@@ -171,6 +183,8 @@ function computeCertificationScore(
   let score = 0;
 
   for (const cert of certs) {
+    // ✅ Fixed: guard cert.name before calling toLowerCase
+    if (!cert?.name) continue;
     const certName = cert.name.toLowerCase();
     const isRelevant = requiredTech.some(
       (tech) => certName.includes(tech) || tech.includes(certName.split(" ")[0])
