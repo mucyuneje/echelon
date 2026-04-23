@@ -14,8 +14,8 @@ function buildOwnerFilter(req: AuthRequest) {
 
 // ─── POST /api/candidates/upload-cv (single OR multiple PDFs/DOCXs) ──────────
 export const uploadCV = async (req: AuthRequest, res: Response): Promise<void> => {
-  const files = req.files as Express.Multer.File[] | undefined;
-  const single = req.file as Express.Multer.File | undefined;
+  const files = req.files as any[] | undefined;
+  const single = req.file as any | undefined;
   const allFiles = files?.length ? files : single ? [single] : [];
 
   if (!allFiles.length) throw new AppError("No file(s) uploaded. Send PDF or Word files.", 400);
@@ -80,7 +80,7 @@ export const uploadCV = async (req: AuthRequest, res: Response): Promise<void> =
 
 // ─── POST /api/candidates/upload-spreadsheet ─────────────────────────────────
 export const uploadSpreadsheet = async (req: AuthRequest, res: Response): Promise<void> => {
-  const files = req.files as Express.Multer.File[] | undefined;
+  const files = req.files as any[] | undefined;
   const single = req.file;
   const allFiles = files?.length ? files : single ? [single] : [];
 
