@@ -74,6 +74,90 @@ function NavLinks({ collapsed }: { collapsed: boolean }) {
   )
 }
 
+// ─── Sign-out overlay ─────────────────────────────────────────────────────────
+function SignOutOverlay() {
+  return (
+    <>
+      {/* Top progress bar */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99999,
+        height: 3, background: 'rgba(37,99,235,0.15)',
+      }}>
+        <div style={{
+          height: '100%',
+          background: 'linear-gradient(90deg, #2563EB, #3B82F6, #60A5FA)',
+          borderRadius: '0 2px 2px 0',
+          animation: 'signOutBar 1.1s cubic-bezier(0.4,0,0.2,1) forwards',
+        }}/>
+      </div>
+
+      {/* Backdrop */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 99998,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        animation: 'signOutBg 1.1s ease forwards',
+      }}>
+        {/* Center card */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          padding: '28px 36px', borderRadius: 16,
+          background: 'rgba(255,255,255,0.95)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+          backdropFilter: 'blur(12px)',
+          animation: 'signOutCard 0.3s ease forwards',
+        }}>
+          {/* Spinning ring with lock icon */}
+          <div style={{ position: 'relative', width: 44, height: 44 }}>
+            <svg style={{ animation: 'spin 0.9s linear infinite' }}
+              width="44" height="44" viewBox="0 0 44 44" fill="none">
+              <circle cx="22" cy="22" r="18" stroke="rgba(37,99,235,0.12)" strokeWidth="3"/>
+              <path d="M22 4 A18 18 0 0 1 40 22" stroke="#2563EB" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="2" y="6" width="10" height="7" rx="1.5" stroke="#2563EB" strokeWidth="1.3"/>
+                <path d="M4.5 6V4.5a2.5 2.5 0 015 0V6" stroke="#2563EB" strokeWidth="1.3" strokeLinecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>
+              Signing out…
+            </p>
+            <p style={{ fontSize: 12, color: '#94A3B8' }}>
+              See you next time
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes signOutBar {
+          0%   { width: 0% }
+          30%  { width: 45% }
+          65%  { width: 72% }
+          85%  { width: 90% }
+          100% { width: 100% }
+        }
+        @keyframes signOutBg {
+          0%   { background: rgba(15,23,42,0);    backdrop-filter: blur(0px)  }
+          20%  { background: rgba(15,23,42,0.25); backdrop-filter: blur(4px)  }
+          100% { background: rgba(15,23,42,0.45); backdrop-filter: blur(8px)  }
+        }
+        @keyframes signOutCard {
+          0%   { opacity: 0; transform: scale(0.88) translateY(8px) }
+          100% { opacity: 1; transform: scale(1)    translateY(0)    }
+        }
+        @keyframes spin { to { transform: rotate(360deg) } }
+      `}</style>
+    </>
+  )
+}
+
 export default function Sidebar() {
   const dispatch = useDispatch()
   const router = useRouter()
@@ -82,8 +166,18 @@ export default function Sidebar() {
   const { theme, toggle } = useTheme()
   const { collapsed, setCollapsed, mobileOpen, setMobileOpen } = useSidebar()
   const isDark = theme === 'dark'
+  const [signingOut, setSigningOut] = useState(false)
 
   useEffect(() => { setMobileOpen(false) }, [path])
+
+  const handleSignOut = () => {
+    if (signingOut) return
+    setSigningOut(true)
+    setTimeout(() => {
+      dispatch(logout())
+      router.push('/auth')
+    }, 1100)
+  }
 
   const bg = isDark ? '#0D1219' : '#2563EB'
   const border = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.15)'
@@ -95,9 +189,13 @@ export default function Sidebar() {
       <div style={{ borderTop: `1px solid ${border}`, padding: 8 }}>
         <button onClick={toggle} title={c ? (isDark ? 'Light Mode' : 'Dark Mode') : undefined}
           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: c ? 0 : 10, justifyContent: c ? 'center' : 'flex-start', padding: c ? '8px 0' : '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.7)' }}>
-          {isDark ? <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="3.5" stroke="currentColor" strokeWidth="1.3" /><path d="M7.5 1v1M7.5 13v1M1 7.5h1M13 7.5h1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg> : <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5A6 6 0 1013.5 7.5c0-.3-.3-.5-.5-.2A4.5 4.5 0 017.5 1.5c-.3 0-.5-.2-.5-.5s.2-.5.5-.5z" fill="currentColor" /></svg>}
+          {isDark
+            ? <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="3.5" stroke="currentColor" strokeWidth="1.3" /><path d="M7.5 1v1M7.5 13v1M1 7.5h1M13 7.5h1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+            : <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5A6 6 0 1013.5 7.5c0-.3-.3-.5-.5-.2A4.5 4.5 0 017.5 1.5c-.3 0-.5-.2-.5-.5s.2-.5.5-.5z" fill="currentColor" /></svg>
+          }
           {!c && <span style={{ fontSize: 12, fontWeight: 500 }}>{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
         </button>
+
         <Link href="/profile" title={c ? (user?.name || 'Profile') : undefined}
           style={{ display: 'flex', alignItems: 'center', gap: c ? 0 : 10, justifyContent: c ? 'center' : 'flex-start', padding: c ? '8px 0' : '8px 12px', borderRadius: 10, textDecoration: 'none', color: 'inherit' }}>
           <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.2)', color: 'white' }}>
@@ -109,10 +207,39 @@ export default function Sidebar() {
           </div>}
           {!c && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M4 2l3 3-3 3" stroke="rgba(255,255,255,0.4)" strokeWidth="1.3" strokeLinecap="round" /></svg>}
         </Link>
-        <button onClick={() => { dispatch(logout()); router.push('/auth') }} title={c ? 'Sign out' : undefined}
-          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: c ? 0 : 10, justifyContent: c ? 'center' : 'flex-start', padding: c ? '8px 0' : '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 500 }}>
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M5 1H2a1 1 0 00-1 1v9a1 1 0 001 1h3M9 9.5L12 6.5M12 6.5L9 3.5M12 6.5H5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          {!c && <span>Sign out</span>}
+
+        {/* Sign-out button — now calls handleSignOut */}
+        <button
+          onClick={handleSignOut}
+          disabled={signingOut}
+          title={c ? 'Sign out' : undefined}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center',
+            gap: c ? 0 : 10,
+            justifyContent: c ? 'center' : 'flex-start',
+            padding: c ? '8px 0' : '8px 12px',
+            borderRadius: 10, border: 'none', cursor: signingOut ? 'not-allowed' : 'pointer',
+            background: signingOut ? 'rgba(255,255,255,0.06)' : 'transparent',
+            color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.6)',
+            fontSize: 12, fontWeight: 500,
+            transition: 'background 0.15s, color 0.15s',
+          }}>
+          {signingOut ? (
+            <>
+              <svg style={{ animation: 'spin 0.8s linear infinite', flexShrink: 0 }}
+                width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.4" strokeDasharray="12 8"/>
+              </svg>
+              {!c && <span>Signing out…</span>}
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M5 1H2a1 1 0 00-1 1v9a1 1 0 001 1h3M9 9.5L12 6.5M12 6.5L9 3.5M12 6.5H5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {!c && <span>Sign out</span>}
+            </>
+          )}
         </button>
       </div>
     )
@@ -120,6 +247,9 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* Sign-out overlay — renders on top of everything */}
+      {signingOut && <SignOutOverlay />}
+
       {/* Desktop */}
       <aside id="sidebar" className="hidden md:flex flex-col fixed left-0 top-0 h-screen z-40"
         style={{ width: w, background: bg, borderRight: isDark ? `1px solid ${border}` : 'none', transition: 'width 0.25s cubic-bezier(.4,0,.2,1)', overflow: 'hidden' }}>
@@ -138,14 +268,16 @@ export default function Sidebar() {
             </div>}
           </div>
           {!collapsed && (
-            <button onClick={() => setCollapsed(true)} title="Collapse" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '4px 6px', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <button onClick={() => setCollapsed(true)} title="Collapse"
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '4px 6px', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           )}
         </div>
         {collapsed && (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-            <button onClick={() => setCollapsed(false)} title="Expand" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '4px 6px', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center' }}>
+            <button onClick={() => setCollapsed(false)} title="Expand"
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '4px 6px', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center' }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           </div>

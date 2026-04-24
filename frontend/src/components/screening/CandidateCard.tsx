@@ -4,6 +4,7 @@ import { ScreeningResultItem } from '@/types'
 import ScoreRing from '@/components/ui/ScoreRing'
 import ScoreBar from '@/components/ui/ScoreBar'
 import FitBadge from '@/components/ui/FitBadge'
+import { screeningAPI } from '@/lib/api'
 
 interface Props {
   result: ScreeningResultItem
@@ -23,11 +24,38 @@ const RANK_BADGE: Record<number, string> = {
 
 export default function CandidateCard({ result, weights }: Props) {
   const [open, setOpen] = useState(result.rank <= 3)
+  const [deepOpen, setDeepOpen] = useState(false)
+  const [deepData, setDeepData] = useState<any>(null)
+  const [deepLoading, setDeepLoading] = useState(false)
+  const [deepError, setDeepError] = useState<string | null>(null)
+
   const { score, insight, features } = result
   const cardClass = RANK_STYLE[result.rank] || 'border-white/6'
   const badgeClass = RANK_BADGE[result.rank] || 'bg-white/5 text-white/50'
 
   const w = weights || { skills: 0.4, experience: 0.3, projects: 0.2, education: 0.05, certifications: 0.05 }
+
+  const handleDeepAnalysis = async () => {
+    if (!result.resultId) return
+
+    // If already loaded, just toggle
+    if (deepData) {
+      setDeepOpen(o => !o)
+      return
+    }
+
+    setDeepOpen(true)
+    setDeepLoading(true)
+    setDeepError(null)
+    try {
+      const res = await screeningAPI.deepAnalysis(result.resultId)
+      setDeepData(res.data?.data || null)
+    } catch (err: any) {
+      setDeepError(err.response?.data?.message || 'Failed to load deep analysis')
+    } finally {
+      setDeepLoading(false)
+    }
+  }
 
   return (
     <div className={`card border transition-all ${cardClass} ${result.rank === 1 ? 'rank-1' : ''}`}>
@@ -136,8 +164,130 @@ export default function CandidateCard({ result, weights }: Props) {
               {insight.alternativeRoleSuggestion}
             </p>
           )}
+
+          {/* Deep Analysis button — only shown when resultId exists */}
+          {result.resultId && (
+            <div className="pt-1">
+              <button
+                onClick={handleDeepAnalysis}
+                disabled={deepLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 11, fontFamily: 'monospace', fontWeight: 600,
+                  padding: '6px 12px', borderRadius: 8, cursor: deepLoading ? 'not-allowed' : 'pointer',
+                  background: deepOpen ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.08)',
+                  color: '#2563EB', border: '1px solid rgba(37,99,235,0.25)',
+                  transition: 'background 0.15s',
+                }}
+              >
+                {deepLoading ? (
+                  <>
+                    <svg style={{ animation: 'spin 1s linear infinite' }} width="11" height="11" viewBox="0 0 11 11" fill="none">
+                      <circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="14 6" />
+                    </svg>
+                    Analyzing…
+                  </>
+                ) : (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                      <circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" strokeWidth="1.2" />
+                      <path d="M5.5 3v2.5l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    </svg>
+                    {deepOpen && deepData ? 'Hide Deep Analysis' : 'Deep Analysis'}
+                  </>
+                )}
+              </button>
+
+              {/* Deep Analysis panel */}
+              {deepOpen && (
+                <div style={{
+                  marginTop: 10, padding: '14px 16px', borderRadius: 10,
+                  background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.15)',
+                }}>
+                  {deepLoading && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {[80, 60, 90, 50].map((w, i) => (
+                        <div key={i} className="shimmer" style={{ height: 12, borderRadius: 6, width: `${w}%` }} />
+                      ))}
+                    </div>
+                  )}
+
+                  {deepError && (
+                    <p style={{ fontSize: 12, color: '#DC2626', fontFamily: 'monospace' }}>⚠ {deepError}</p>
+                  )}
+
+                  {!deepLoading && !deepError && deepData && (
+                    <DeepAnalysisContent data={deepData} />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+}
+
+/* Renders whatever fields the deep analysis endpoint returns */
+function DeepAnalysisContent({ data }: { data: any }) {
+  const { deepAnalysis } = data
+
+  if (!deepAnalysis) {
+    return <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>No deep analysis data available.</p>
+  }
+
+  // deepAnalysis is an object — render each field generically
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <p style={{ fontSize: 10, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'monospace', fontWeight: 700, marginBottom: 2 }}>
+        Deep Analysis — {data.candidateName}
+      </p>
+      {Object.entries(deepAnalysis).map(([key, value]) => {
+        if (value === null || value === undefined) return null
+        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
+
+        if (Array.isArray(value)) {
+          return (
+            <div key={key}>
+              <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: 'monospace', marginBottom: 6 }}>{label}</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {(value as any[]).map((item, i) => (
+                  <li key={i} style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+                    <span style={{ color: '#2563EB', flexShrink: 0, fontSize: 10, marginTop: 2 }}>›</span>
+                    <span>{typeof item === 'object' ? JSON.stringify(item) : String(item)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        if (typeof value === 'object') {
+          return (
+            <div key={key}>
+              <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: 'monospace', marginBottom: 6 }}>{label}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {Object.entries(value as Record<string, any>).map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace', flexShrink: 0, minWidth: 90 }}>{k}:</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{String(v)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        }
+
+        return (
+          <div key={key}>
+            <p style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: 'monospace', marginBottom: 4 }}>{label}</p>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{String(value)}</p>
+          </div>
+        )
+      })}
     </div>
   )
 }

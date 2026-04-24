@@ -28,6 +28,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
         transition: 'margin-left 0.25s cubic-bezier(.4,0,.2,1), width 0.25s cubic-bezier(.4,0,.2,1)',
         background: 'var(--bg)',
         overflowX: 'hidden',
+        flex: 1, 
       }}
     >
       {children}
