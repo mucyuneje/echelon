@@ -4,8 +4,8 @@
 
 Echelon is a production-ready, recruiter-facing platform that uses **Google Gemini AI** to screen, score, and shortlist job applicants — from both structured talent profiles and uploaded resumes — while keeping humans firmly in control of final hiring decisions.
 
-**Live Demo:** [https://echelon.vercel.app](https://echelon.vercel.app)  
-**API Base URL:** [https://echelon-api.railway.app](https://echelon-api.railway.app)
+**Live Demo:** [https://echelon-theta.vercel.app](https://echelon-theta.vercel.app/)  
+**API Base URL:** [https://echelon-0ozp.onrender.com](https://echelon-0ozp.onrender.com/)
 
 ---
 
@@ -324,7 +324,6 @@ Total Score = (Skills × 0.40) + (Experience × 0.30) + (Projects × 0.20) + (Ed
 | NDAMAGE JOSHUA| Backend Engineer |
 | MITARI MURENZI CHRIS| UI UX DESIGN|
 | MUGEMA ABDOUL RAZAK| Frontend Engineer 
-| 
 
 ---
 
