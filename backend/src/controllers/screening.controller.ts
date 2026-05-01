@@ -134,22 +134,31 @@ export const runScreening = async (req: AuthRequest, res: Response): Promise<voi
   await ScreeningResult.insertMany(finalResults);
 
   // 9. Build enriched response
-  const enrichedResults = finalResults.map((result, idx) => {
-    const { candidate } = rankedCandidates[idx];
-    return {
-      rank: result.rank,
-      candidateId: candidate._id,
-      candidateName: `${candidate.profile.firstName} ${candidate.profile.lastName}`,
-      candidateEmail: candidate.profile.email,
-      candidateHeadline: candidate.profile.headline,
-      candidateLocation: candidate.profile.location,
-      score: result.score,
-      insight: result.insight,
-      features: candidate.features,
-      source: candidate.source,
-    };
-  });
+// AFTER — insert the saved docs so we can grab their _id values
+const savedDocs = await ScreeningResult.find({ jobId, screeningRunId });
 
+const enrichedResults = finalResults.map((result, idx) => {
+  const { candidate } = rankedCandidates[idx];
+
+  // Match the saved document by candidateId to get its _id
+  const savedDoc = savedDocs.find(
+    (d) => d.candidateId.toString() === candidate._id.toString()
+  );
+
+  return {
+    resultId: savedDoc?._id?.toString(),   // ← THIS is what the frontend needs
+    rank: result.rank,
+    candidateId: candidate._id,
+    candidateName: `${candidate.profile.firstName} ${candidate.profile.lastName}`,
+    candidateEmail: candidate.profile.email,
+    candidateHeadline: candidate.profile.headline,
+    candidateLocation: candidate.profile.location,
+    score: result.score,
+    insight: result.insight,
+    features: candidate.features,
+    source: candidate.source,
+  };
+});
   const totalTime = Date.now() - startTime;
 
   res.json({

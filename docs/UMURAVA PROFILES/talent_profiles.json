@@ -1,0 +1,537 @@
+[
+  {
+    "firstName": "Alain",
+    "lastName": "Mugisha",
+    "email": "alain.mugisha@example.com",
+    "headline": "Senior Backend Engineer – Node.js & Cloud Systems",
+    "bio": "Experienced backend engineer with 6+ years building scalable distributed systems. Passionate about cloud architecture, microservices, and mentoring junior developers. Led multiple projects from conception to deployment serving millions of users across Africa.",
+    "location": "Kigali, Rwanda",
+    "skills": [
+      {
+        "name": "Node.js",
+        "level": "Expert",
+        "yearsOfExperience": 6
+      },
+      {
+        "name": "Python",
+        "level": "Advanced",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "PostgreSQL",
+        "level": "Expert",
+        "yearsOfExperience": 5
+      },
+      {
+        "name": "MongoDB",
+        "level": "Advanced",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "Docker",
+        "level": "Advanced",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "Kubernetes",
+        "level": "Intermediate",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "AWS",
+        "level": "Advanced",
+        "yearsOfExperience": 5
+      },
+      {
+        "name": "CI/CD",
+        "level": "Advanced",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "GraphQL",
+        "level": "Intermediate",
+        "yearsOfExperience": 2
+      }
+    ],
+    "languages": [
+      {
+        "name": "English",
+        "proficiency": "Fluent"
+      },
+      {
+        "name": "French",
+        "proficiency": "Fluent"
+      },
+      {
+        "name": "Kinyarwanda",
+        "proficiency": "Native"
+      }
+    ],
+    "experience": [
+      {
+        "company": "Africa Tech Solutions",
+        "role": "Senior Backend Engineer",
+        "startDate": "2022-03",
+        "endDate": "Present",
+        "description": "Lead backend development for fintech platform serving 2M+ users across East Africa. Designed microservices architecture reducing system latency by 60%. Implemented automated CI/CD pipelines and mentored team of 5 junior developers.",
+        "technologies": [
+          "Node.js",
+          "PostgreSQL",
+          "Docker",
+          "Kubernetes",
+          "AWS",
+          "Redis"
+        ],
+        "isCurrent": true
+      },
+      {
+        "company": "Rwanda Innovation Hub",
+        "role": "Backend Developer",
+        "startDate": "2019-06",
+        "endDate": "2022-02",
+        "description": "Developed RESTful APIs and backend services for e-government platform. Optimized database queries improving response times by 40%. Collaborated with frontend team to integrate new features.",
+        "technologies": [
+          "Node.js",
+          "MongoDB",
+          "AWS",
+          "Docker",
+          "GraphQL"
+        ],
+        "isCurrent": false
+      },
+      {
+        "company": "Kigali Tech Startups",
+        "role": "Junior Developer",
+        "startDate": "2018-01",
+        "endDate": "2019-05",
+        "description": "Built and maintained web applications using JavaScript and Python. Participated in code reviews and agile ceremonies. Contributed to open-source projects.",
+        "technologies": [
+          "Python",
+          "JavaScript",
+          "PostgreSQL",
+          "Git"
+        ],
+        "isCurrent": false
+      }
+    ],
+    "education": [
+      {
+        "institution": "University of Rwanda",
+        "degree": "Bachelor's",
+        "fieldOfStudy": "Computer Science",
+        "startYear": 2014,
+        "endYear": 2018
+      }
+    ],
+    "certifications": [
+      {
+        "name": "AWS Certified Solutions Architect",
+        "issuer": "Amazon Web Services",
+        "issueDate": "2022-06"
+      },
+      {
+        "name": "MongoDB Certified Developer",
+        "issuer": "MongoDB",
+        "issueDate": "2021-03"
+      }
+    ],
+    "projects": [
+      {
+        "name": "FinTech Payment Gateway",
+        "description": "Built scalable payment processing system handling 100K+ daily transactions with 99.9% uptime. Integrated with multiple African mobile money providers.",
+        "technologies": [
+          "Node.js",
+          "PostgreSQL",
+          "Docker",
+          "AWS Lambda",
+          "Redis"
+        ],
+        "role": "Lead Backend Engineer",
+        "link": "https://github.com/alainm/fintech-gateway",
+        "startDate": "2022-06",
+        "endDate": "2023-01"
+      },
+      {
+        "name": "E-Government Services API",
+        "description": "Developed comprehensive API for citizen services including document requests, tax payments, and appointment scheduling.",
+        "technologies": [
+          "Node.js",
+          "MongoDB",
+          "AWS",
+          "Docker",
+          "Swagger"
+        ],
+        "role": "Backend Developer",
+        "link": "https://github.com/rwanda-innovation/egov-api",
+        "startDate": "2020-03",
+        "endDate": "2021-08"
+      }
+    ],
+    "availability": {
+      "status": "Open to Opportunities",
+      "type": "Full-time",
+      "startDate": "2024-06-01"
+    },
+    "socialLinks": {
+      "linkedin": "https://linkedin.com/in/alainmugisha",
+      "github": "https://github.com/alainm",
+      "portfolio": "https://alainmugisha.dev"
+    }
+  },
+  {
+    "firstName": "Sonia",
+    "lastName": "Irakoze",
+    "email": "sonia.irakoze@example.com",
+    "headline": "AI/ML Engineer – Computer Vision & NLP Systems",
+    "bio": "AI researcher and engineer with 5 years of experience in machine learning, deep learning, and NLP. Published papers at top AI conferences and built production ML systems for healthcare and agriculture applications in Rwanda.",
+    "location": "Kigali, Rwanda",
+    "skills": [
+      {
+        "name": "Python",
+        "level": "Expert",
+        "yearsOfExperience": 5
+      },
+      {
+        "name": "TensorFlow",
+        "level": "Expert",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "PyTorch",
+        "level": "Advanced",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "OpenCV",
+        "level": "Advanced",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "Scikit-learn",
+        "level": "Expert",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "PostgreSQL",
+        "level": "Intermediate",
+        "yearsOfExperience": 2
+      },
+      {
+        "name": "Docker",
+        "level": "Intermediate",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "AWS SageMaker",
+        "level": "Advanced",
+        "yearsOfExperience": 2
+      },
+      {
+        "name": "Hugging Face",
+        "level": "Advanced",
+        "yearsOfExperience": 2
+      }
+    ],
+    "languages": [
+      {
+        "name": "English",
+        "proficiency": "Fluent"
+      },
+      {
+        "name": "French",
+        "proficiency": "Fluent"
+      },
+      {
+        "name": "Kinyarwanda",
+        "proficiency": "Native"
+      },
+      {
+        "name": "Swahili",
+        "proficiency": "Conversational"
+      }
+    ],
+    "experience": [
+      {
+        "company": "AI Research Lab Rwanda",
+        "role": "Senior AI Engineer",
+        "startDate": "2022-08",
+        "endDate": "Present",
+        "description": "Leading computer vision projects for agricultural disease detection using satellite imagery. Developed NLP models for Kinyarwanda language processing. Managed ML infrastructure and MLOps pipelines.",
+        "technologies": [
+          "Python",
+          "PyTorch",
+          "TensorFlow",
+          "AWS SageMaker",
+          "Docker",
+          "Hugging Face"
+        ],
+        "isCurrent": true
+      },
+      {
+        "company": "HealthTech Africa",
+        "role": "Machine Learning Engineer",
+        "startDate": "2020-03",
+        "endDate": "2022-07",
+        "description": "Built diagnostic assistance models achieving 94% accuracy in disease detection. Implemented data pipelines processing 50K+ patient records monthly. Collaborated with medical professionals to validate model outputs.",
+        "technologies": [
+          "Python",
+          "TensorFlow",
+          "Scikit-learn",
+          "PostgreSQL",
+          "OpenCV"
+        ],
+        "isCurrent": false
+      },
+      {
+        "company": "Data Science Rwanda",
+        "role": "Junior Data Scientist",
+        "startDate": "2019-01",
+        "endDate": "2020-02",
+        "description": "Analyzed large datasets to derive business insights for banking clients. Built predictive models for customer churn and credit scoring. Created data visualizations for stakeholder presentations.",
+        "technologies": [
+          "Python",
+          "Scikit-learn",
+          "Pandas",
+          "Tableau",
+          "SQL"
+        ],
+        "isCurrent": false
+      }
+    ],
+    "education": [
+      {
+        "institution": "Carnegie Mellon University Africa",
+        "degree": "Master's",
+        "fieldOfStudy": "Artificial Intelligence",
+        "startYear": 2020,
+        "endYear": 2022
+      },
+      {
+        "institution": "University of Rwanda",
+        "degree": "Bachelor's",
+        "fieldOfStudy": "Computer Engineering",
+        "startYear": 2015,
+        "endYear": 2019
+      }
+    ],
+    "certifications": [
+      {
+        "name": "TensorFlow Developer Certificate",
+        "issuer": "Google",
+        "issueDate": "2021-08"
+      },
+      {
+        "name": "Deep Learning Specialization",
+        "issuer": "DeepLearning.AI",
+        "issueDate": "2020-12"
+      },
+      {
+        "name": "AWS Machine Learning Specialty",
+        "issuer": "Amazon Web Services",
+        "issueDate": "2023-03"
+      }
+    ],
+    "projects": [
+      {
+        "name": "Crop Disease Detection System",
+        "description": "Developed computer vision system using satellite and drone imagery to detect crop diseases in real-time. Achieved 92% accuracy across 15 different crop disease types.",
+        "technologies": [
+          "Python",
+          "PyTorch",
+          "OpenCV",
+          "AWS SageMaker",
+          "Docker"
+        ],
+        "role": "Lead AI Engineer",
+        "link": "https://github.com/soniai/crop-disease-ai",
+        "startDate": "2022-10",
+        "endDate": "2023-06"
+      },
+      {
+        "name": "Kinyarwanda NLP Toolkit",
+        "description": "Built NLP tools for Kinyarwanda language including sentiment analysis, named entity recognition, and machine translation. First comprehensive toolkit for the language.",
+        "technologies": [
+          "Python",
+          "Hugging Face",
+          "TensorFlow",
+          "FastAPI",
+          "PostgreSQL"
+        ],
+        "role": "AI Researcher",
+        "link": "https://github.com/soniai/kinya-nlp",
+        "startDate": "2023-01",
+        "endDate": "2024-01"
+      }
+    ],
+    "availability": {
+      "status": "Available",
+      "type": "Full-time",
+      "startDate": "2024-05-15"
+    },
+    "socialLinks": {
+      "linkedin": "https://linkedin.com/in/soniairakoze",
+      "github": "https://github.com/soniai",
+      "portfolio": "https://soniairakoze.ai"
+    }
+  },
+  {
+    "firstName": "Eric",
+    "lastName": "Hirwa",
+    "email": "eric.hirwa@example.com",
+    "headline": "Full Stack Developer – React & Node.js Expert",
+    "bio": "Full stack developer with 4+ years building modern web applications. Specialized in React, Node.js, and cloud-native architectures. Passionate about creating intuitive user experiences and contributing to Rwanda's growing tech ecosystem.",
+    "location": "Kigali, Rwanda",
+    "skills": [
+      {
+        "name": "JavaScript",
+        "level": "Expert",
+        "yearsOfExperience": 5
+      },
+      {
+        "name": "TypeScript",
+        "level": "Expert",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "React",
+        "level": "Expert",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "Next.js",
+        "level": "Advanced",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "Node.js",
+        "level": "Advanced",
+        "yearsOfExperience": 4
+      },
+      {
+        "name": "PostgreSQL",
+        "level": "Advanced",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "MongoDB",
+        "level": "Intermediate",
+        "yearsOfExperience": 2
+      },
+      {
+        "name": "Tailwind CSS",
+        "level": "Advanced",
+        "yearsOfExperience": 3
+      },
+      {
+        "name": "Docker",
+        "level": "Intermediate",
+        "yearsOfExperience": 2
+      }
+    ],
+    "languages": [
+      {
+        "name": "English",
+        "proficiency": "Fluent"
+      },
+      {
+        "name": "French",
+        "proficiency": "Conversational"
+      },
+      {
+        "name": "Kinyarwanda",
+        "proficiency": "Native"
+      }
+    ],
+    "experience": [
+      {
+        "company": "Kigali Tech Ventures",
+        "role": "Full Stack Developer",
+        "startDate": "2022-01",
+        "endDate": "Present",
+        "description": "Building and maintaining multiple client-facing web applications using React and Node.js. Implemented responsive designs and improved application performance by 50%. Collaborating with UI/UX designers to create seamless user experiences.",
+        "technologies": [
+          "React",
+          "Next.js",
+          "TypeScript",
+          "Node.js",
+          "PostgreSQL",
+          "Tailwind CSS"
+        ],
+        "isCurrent": true
+      },
+      {
+        "company": "Digital Rwanda Agency",
+        "role": "Frontend Developer",
+        "startDate": "2020-06",
+        "endDate": "2021-12",
+        "description": "Developed user interfaces for government digital services platform. Created reusable component library used across 10+ projects. Implemented accessibility standards reaching WCAG 2.1 compliance.",
+        "technologies": [
+          "React",
+          "JavaScript",
+          "CSS",
+          "REST APIs",
+          "Git"
+        ],
+        "isCurrent": false
+      }
+    ],
+    "education": [
+      {
+        "institution": "African Leadership University",
+        "degree": "Bachelor's",
+        "fieldOfStudy": "Software Engineering",
+        "startYear": 2017,
+        "endYear": 2021
+      }
+    ],
+    "certifications": [
+      {
+        "name": "Meta Frontend Developer Certificate",
+        "issuer": "Meta",
+        "issueDate": "2023-02"
+      }
+    ],
+    "projects": [
+      {
+        "name": "E-Commerce Platform",
+        "description": "Built full-stack e-commerce platform with payment integration, inventory management, and admin dashboard. Serving 200+ merchants across Rwanda.",
+        "technologies": [
+          "Next.js",
+          "Node.js",
+          "PostgreSQL",
+          "Stripe",
+          "Tailwind CSS"
+        ],
+        "role": "Full Stack Developer",
+        "link": "https://github.com/erichirwa/ecommerce-platform",
+        "startDate": "2023-03",
+        "endDate": "2023-12"
+      },
+      {
+        "name": "Task Management App",
+        "description": "Developed collaborative project management tool with real-time updates, drag-and-drop interface, and team collaboration features.",
+        "technologies": [
+          "React",
+          "Node.js",
+          "Socket.io",
+          "MongoDB",
+          "Docker"
+        ],
+        "role": "Full Stack Developer",
+        "link": "https://github.com/erichirwa/task-manager",
+        "startDate": "2023-08",
+        "endDate": "2024-02"
+      }
+    ],
+    "availability": {
+      "status": "Available",
+      "type": "Full-time",
+      "startDate": "2024-06-01"
+    },
+    "socialLinks": {
+      "linkedin": "https://linkedin.com/in/erichirwa",
+      "github": "https://github.com/erichirwa",
+      "portfolio": "https://erichirwa.dev"
+    }
+  }
+]

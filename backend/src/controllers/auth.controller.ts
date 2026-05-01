@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { User } from "../models/user.model";
 import { AppError } from "../middleware/error.middleware";
 
@@ -52,4 +53,47 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const getMe = async (req: any, res: Response): Promise<void> => {
   res.json({ success: true, data: req.user });
+};
+
+export const updateProfile = async (req: any, res: Response): Promise<void> => {
+  const { name } = req.body;
+
+  if (!name || typeof name !== "string" || !name.trim()) {
+    throw new AppError("Name is required", 400);
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { name: name.trim() },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  res.json({ success: true, data: user });
+};
+
+export const changePassword = async (req: any, res: Response): Promise<void> => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new AppError("currentPassword and newPassword are required", 400);
+  }
+
+  const user = await User.findById(req.user._id).select("+password");
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    throw new AppError("Current password is incorrect", 400);
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({ success: true, data: { message: "Password updated successfully" } });
 };

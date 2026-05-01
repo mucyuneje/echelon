@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { protect } from "../middleware/auth.middleware";
 
-import { register, login, getMe } from "../controllers/auth.controller";
+import { register, login, getMe, updateProfile, changePassword } from "../controllers/auth.controller";
 import { createJob, getJobs, getJob, updateJob, deleteJob, analyzeJob } from "../controllers/job.controller";
 import {
   uploadCV, uploadSpreadsheet, ingestUmuravaProfile, bulkIngestUmuravaProfiles,
@@ -36,6 +36,8 @@ const upload = multer({
 router.post("/auth/register", register);
 router.post("/auth/login", login);
 router.get("/auth/me", protect, getMe);
+router.put("/auth/me", protect, updateProfile);
+router.put("/auth/password", protect, changePassword);
 
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 router.post("/jobs", protect, createJob);
